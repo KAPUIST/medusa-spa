@@ -1,0 +1,36 @@
+version: 2
+updates:
+  # Root dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      turborepo:
+        patterns:
+          - "turbo*"
+      dev-dependencies:
+        patterns:
+          - "prettier"
+          - "typescript"
+
+  # Server app dependencies
+  - package-ecosystem: "npm"
+    directory: "/apps/server"
+    schedule:
+      interval: "daily"
+    allow:
+      - dependency-type: production
+    groups:
+      medusa:
+        patterns:
+          - "@medusajs*"
+          - "medusa*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "@medusajs*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "medusa*"
+        update-types: ["version-update:semver-major"]
