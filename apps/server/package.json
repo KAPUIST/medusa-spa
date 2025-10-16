@@ -37,7 +37,7 @@
     "@medusajs/medusa-oas-cli": "^2.10.3",
     "@medusajs/test-utils": "2.10.3",
     "@mikro-orm/cli": "6.4.3",
-    "@swc/core": "1.5.7",
+    "@swc/core": "1.13.5",
     "@swc/jest": "^0.2.36",
     "@types/jest": "^29.5.13",
     "@types/node": "^20.0.0",
