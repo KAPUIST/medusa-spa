@@ -9,6 +9,74 @@ alwaysApply: true
 
 AI automatically executes git commits whenever code modifications are completed. This ensures consistent version control and clear development history.
 
+## Branch and PR Workflow
+
+### IMPORTANT: Always Use Feature Branches
+
+**NEVER commit directly to `main` branch.** Always create a feature branch and submit a PR.
+
+### Step 1: Create Feature Branch
+
+Before making any changes, create a feature branch:
+
+```bash
+# Check current branch
+git branch
+
+# Create and switch to feature branch
+git checkout -b <type>/<description>
+```
+
+### Branch Naming Convention
+
+Follow this pattern: `<type>/<short-description>`
+
+| Type       | Description      | Example                 |
+| ---------- | ---------------- | ----------------------- |
+| `feat`     | New feature      | `feat/order-export`     |
+| `fix`      | Bug fix          | `fix/payment-timeout`   |
+| `refactor` | Code refactoring | `refactor/auth-service` |
+| `docs`     | Documentation    | `docs/api-guide`        |
+| `test`     | Tests            | `test/order-validation` |
+| `chore`    | Maintenance      | `chore/update-deps`     |
+| `ci`       | CI changes       | `ci/add-github-actions` |
+
+**Examples:**
+
+```bash
+# Good branch names
+git checkout -b feat/add-webhook-support
+git checkout -b fix/resolve-cart-bug
+git checkout -b docs/update-readme
+
+# Bad branch names
+git checkout -b feature  # Too vague
+git checkout -b my-changes  # Not descriptive
+git checkout -b FEAT/AddWebhook  # Wrong case
+```
+
+### Step 2: Work on Feature Branch
+
+Make changes, commit following conventional commits format.
+
+### Step 3: Push and Create PR
+
+After all commits are done:
+
+```bash
+# Push branch to remote
+git push -u origin <branch-name>
+
+# Create PR (see .claude/02-github-pr.md for details)
+```
+
+**After pushing, you MUST:**
+
+1. Read `.claude/02-github-pr.md` for PR creation rules
+2. Create a Pull Request
+3. Wait for review and approval
+4. Merge to main only after PR approval
+
 ## When to Auto-Commit
 
 ### Commit Triggers
@@ -26,6 +94,7 @@ AI automatically executes git commits whenever code modifications are completed.
 - Lint errors exist
 - Work is incomplete or in progress
 - Debugging temporary code exists
+- You are on `main` branch (create feature branch first!)
 
 ## Commit Message Format
 
@@ -41,19 +110,19 @@ Follow **Conventional Commits** specification:
 
 ### Commit Types
 
-| Type       | Description                                           | Example                                    |
-| ---------- | ----------------------------------------------------- | ------------------------------------------ |
-| `feat`     | New feature                                           | `feat(api): add order export endpoint`     |
-| `fix`      | Bug fix                                               | `fix(cart): resolve quantity update issue` |
-| `refactor` | Code refactoring                                      | `refactor(auth): simplify JWT validation`  |
-| `docs`     | Documentation changes                                 | `docs(api): update endpoint documentation` |
-| `style`    | Code style changes (formatting, semicolons, etc.)     | `style(ui): format button component`       |
-| `test`     | Adding or updating tests                              | `test(orders): add integration tests`      |
-| `chore`    | Build process or auxiliary tool changes               | `chore(deps): update medusa to v2.0`       |
-| `perf`     | Performance improvements                              | `perf(db): optimize order query`           |
-| `ci`       | CI configuration changes                              | `ci(github): add deployment workflow`      |
-| `build`    | Build system changes                                  | `build(docker): update postgres image`     |
-| `revert`   | Revert previous commit                                | `revert: feat(api): add order export`      |
+| Type       | Description                                       | Example                                    |
+| ---------- | ------------------------------------------------- | ------------------------------------------ |
+| `feat`     | New feature                                       | `feat(api): add order export endpoint`     |
+| `fix`      | Bug fix                                           | `fix(cart): resolve quantity update issue` |
+| `refactor` | Code refactoring                                  | `refactor(auth): simplify JWT validation`  |
+| `docs`     | Documentation changes                             | `docs(api): update endpoint documentation` |
+| `style`    | Code style changes (formatting, semicolons, etc.) | `style(ui): format button component`       |
+| `test`     | Adding or updating tests                          | `test(orders): add integration tests`      |
+| `chore`    | Build process or auxiliary tool changes           | `chore(deps): update medusa to v2.0`       |
+| `perf`     | Performance improvements                          | `perf(db): optimize order query`           |
+| `ci`       | CI configuration changes                          | `ci(github): add deployment workflow`      |
+| `build`    | Build system changes                              | `build(docker): update postgres image`     |
+| `revert`   | Revert previous commit                            | `revert: feat(api): add order export`      |
 
 ### Scope Guidelines
 
