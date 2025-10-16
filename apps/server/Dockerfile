@@ -22,23 +22,14 @@ RUN yarn build
 # Stage 2: Production
 FROM node:20-alpine AS production
 
-# Use /server as working directory (recommended by Medusa docs)
+# Use /server as working directory
 WORKDIR /server
 
-# Copy package files
-COPY --from=builder /app/package.json /app/yarn.lock ./
-COPY --from=builder /app/apps/server/package.json ./
+# Copy the entire built .medusa/server directory which is the production-ready app
+COPY --from=builder /app/apps/server/.medusa/server ./
 
-# Install production dependencies only
+# Install only production dependencies in the .medusa/server directory
 RUN yarn install --frozen-lockfile --production
-
-# Copy built files from builder stage
-COPY --from=builder /app/apps/server/.medusa ./.medusa
-COPY --from=builder /app/apps/server/medusa-config.ts ./medusa-config.ts
-COPY --from=builder /app/apps/server/src ./src
-
-# Copy medusa-config.js from .medusa/server/ to the root (Medusa looks for it here)
-RUN cp ./.medusa/server/medusa-config.js ./medusa-config.js
 
 # Expose Medusa default port
 EXPOSE 9000
@@ -47,5 +38,5 @@ EXPOSE 9000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:9000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start the server
+# Start the server from .medusa/server directory
 CMD ["yarn", "start"]
