@@ -20,7 +20,7 @@ module.exports = defineConfig({
       return {
         ...config,
         server: {
-          allowedHosts: ['*.chwaokekmxf4.amplifyapp.com'],
+          allowedHosts: ['.chwaokekmxf4.amplifyapp.com', '.elb.amazonaws.com'],
         },
       }
     },
