@@ -22,23 +22,23 @@ RUN yarn build
 # Stage 2: Production
 FROM node:20-alpine AS production
 
-WORKDIR /app
+# Use /server as working directory (recommended by Medusa docs)
+WORKDIR /server
+
+# Copy package files
+COPY --from=builder /app/package.json /app/yarn.lock ./
+COPY --from=builder /app/apps/server/package.json ./
 
 # Install production dependencies only
-COPY package.json yarn.lock ./
-COPY apps/server/package.json ./apps/server/
-
 RUN yarn install --frozen-lockfile --production
 
 # Copy built files from builder stage
-COPY --from=builder /app/apps/server/.medusa ./apps/server/.medusa
-COPY --from=builder /app/apps/server/medusa-config.ts ./apps/server/medusa-config.ts
-COPY --from=builder /app/apps/server/src ./apps/server/src
+COPY --from=builder /app/apps/server/.medusa ./.medusa
+COPY --from=builder /app/apps/server/medusa-config.ts ./medusa-config.ts
+COPY --from=builder /app/apps/server/src ./src
 
 # Copy medusa-config.js from .medusa/server/ to the root (Medusa looks for it here)
-RUN cp /app/apps/server/.medusa/server/medusa-config.js /app/apps/server/medusa-config.js
-
-WORKDIR /app/apps/server
+RUN cp ./.medusa/server/medusa-config.js ./medusa-config.js
 
 # Expose Medusa default port
 EXPOSE 9000
