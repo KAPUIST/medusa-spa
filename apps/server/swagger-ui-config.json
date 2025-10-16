@@ -1,0 +1,17 @@
+{
+  "url": "./build/oas/combined.oas.json",
+  "dom_id": "#swagger-ui",
+  "deepLinking": true,
+  "presets": [
+    "SwaggerUIBundle.presets.apis",
+    "SwaggerUIStandalonePreset"
+  ],
+  "plugins": [
+    "SwaggerUIBundle.plugins.DownloadUrl"
+  ],
+  "layout": "StandaloneLayout",
+  "validatorUrl": null,
+  "tryItOutEnabled": true,
+  "requestInterceptor": "(req) => { return req; }",
+  "responseInterceptor": "(res) => { return res; }"
+}
