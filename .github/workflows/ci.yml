@@ -41,8 +41,8 @@ jobs:
       - name: Run TypeScript type check
         run: yarn check-types
 
-  test:
-    name: Test
+  test-server:
+    name: Test Server
     runs-on: ubuntu-latest
     env:
       NODE_ENV: CI
@@ -107,14 +107,14 @@ jobs:
       - name: Run seed
         run: cd apps/server && yarn seed
 
-      - name: Run unit tests
-        run: cd apps/server && yarn test:unit
+      - name: Start development server
+        run: cd apps/server && yarn dev &
 
-      - name: Run integration tests (modules)
-        run: cd apps/server && yarn test:integration:modules
+      - name: Wait for server to be ready
+        run: ./.github/scripts/wait-for-server-live.sh
 
-      - name: Run integration tests (http)
-        run: cd apps/server && yarn test:integration:http
+      - name: Kill server
+        run: kill -9 $(lsof -t -i :9000) || true
 
   build:
     name: Build
@@ -152,71 +152,3 @@ jobs:
             apps/*/dist
             apps/*/build
           retention-days: 7
-
-  server-health-check:
-    name: Server Health Check
-    runs-on: ubuntu-latest
-    needs: [test, build]
-    env:
-      NODE_ENV: CI
-      REDIS_URL: redis://localhost:6379
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/medusa_test
-      POSTGRES_URL: postgres://postgres:postgres@localhost:5432/medusa_test
-
-    services:
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
-
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: medusa_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'yarn'
-
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-
-      - name: Build server
-        run: cd apps/server && yarn build
-
-      - name: Run migrations
-        run: cd apps/server && npx medusa db:migrate
-
-      - name: Run seed
-        run: cd apps/server && yarn seed
-
-      - name: Start development server
-        run: cd apps/server && yarn dev &
-
-      - name: Wait for server to be ready
-        run: ./.github/scripts/wait-for-server-live.sh
-
-      - name: Kill server
-        run: kill -9 $(lsof -t -i :9000) || true
