@@ -13,8 +13,8 @@ env:
   ECS_CLUSTER: medusa-cluster
   ECS_TASK_DEFINITION: medusa-task
   CONTAINER_NAME: medusa-server
-  # Production environment variables
-  NODE_ENV: production
+  # Temporary: development mode for HTTP testing (until HTTPS is configured)
+  NODE_ENV: development
   STORE_CORS: ${{ secrets.STORE_CORS }}
   ADMIN_CORS: ${{ secrets.ADMIN_CORS }}
   AUTH_CORS: ${{ secrets.AUTH_CORS }}
