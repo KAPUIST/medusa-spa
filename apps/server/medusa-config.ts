@@ -16,5 +16,13 @@ module.exports = defineConfig({
   },
   admin: {
     disable: process.env.DISABLE_MEDUSA_ADMIN === 'true',
+    vite: config => {
+      return {
+        ...config,
+        server: {
+          allowedHosts: ['*.chwaokekmxf4.amplifyapp.com'],
+        },
+      }
+    },
   },
 })
