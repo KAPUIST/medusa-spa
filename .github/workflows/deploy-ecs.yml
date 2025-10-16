@@ -1,0 +1,112 @@
+name: Deploy to ECS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: medusa-server
+  ECS_SERVICE: medusa-service
+  ECS_CLUSTER: medusa-cluster
+  ECS_TASK_DEFINITION: medusa-task
+  CONTAINER_NAME: medusa-server
+  # Production environment variables
+  NODE_ENV: production
+  STORE_CORS: ${{ secrets.STORE_CORS }}
+  ADMIN_CORS: ${{ secrets.ADMIN_CORS }}
+  AUTH_CORS: ${{ secrets.AUTH_CORS }}
+  JWT_SECRET: ${{ secrets.JWT_SECRET }}
+  COOKIE_SECRET: ${{ secrets.COOKIE_SECRET }}
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  REDIS_URL: ${{ secrets.REDIS_URL }}
+
+jobs:
+  deploy:
+    name: Deploy to ECS Fargate
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f apps/server/Dockerfile .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition ${{ env.ECS_TASK_DEFINITION }} \
+            --query taskDefinition > task-definition.json
+
+      - name: Update task definition with environment variables
+        run: |
+          cat task-definition.json | jq --arg NODE_ENV "${{ env.NODE_ENV }}" \
+            --arg STORE_CORS "${{ env.STORE_CORS }}" \
+            --arg ADMIN_CORS "${{ env.ADMIN_CORS }}" \
+            --arg AUTH_CORS "${{ env.AUTH_CORS }}" \
+            --arg JWT_SECRET "${{ env.JWT_SECRET }}" \
+            --arg COOKIE_SECRET "${{ env.COOKIE_SECRET }}" \
+            --arg DATABASE_URL "${{ env.DATABASE_URL }}" \
+            --arg REDIS_URL "${{ env.REDIS_URL }}" \
+            '.containerDefinitions[0].environment = [
+              {"name": "NODE_ENV", "value": $NODE_ENV},
+              {"name": "STORE_CORS", "value": $STORE_CORS},
+              {"name": "ADMIN_CORS", "value": $ADMIN_CORS},
+              {"name": "AUTH_CORS", "value": $AUTH_CORS},
+              {"name": "JWT_SECRET", "value": $JWT_SECRET},
+              {"name": "COOKIE_SECRET", "value": $COOKIE_SECRET},
+              {"name": "DATABASE_URL", "value": $DATABASE_URL},
+              {"name": "REDIS_URL", "value": $REDIS_URL},
+              {"name": "MEDUSA_ADMIN_ONBOARDING_TYPE", "value": "default"}
+            ]' > task-definition-updated.json
+          mv task-definition-updated.json task-definition.json
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      - name: Deployment notification
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "Deployment succeeded!"
+            echo "Image: ${{ steps.build-image.outputs.image }}"
+          else
+            echo "Deployment failed!"
+          fi
