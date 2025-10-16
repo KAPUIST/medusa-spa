@@ -1,29 +1,25 @@
 #!/bin/bash
 
-for i in {1..6}
-do
-  echo $i
-  status_code=$(curl \
-    -X GET \
-    --write-out %{http_code} \
-    --silent\
-    --output /dev/null\
-    http://localhost:9000/store/products)
+# Wait for Medusa server to be ready
+# Default timeout: 60 seconds
+# Default port: 9000
 
-echo $status_code
-  if [[ "$status_code" -ne 000 ]] ; then
-    echo "exiting"
-    exit 0
-  else
-    sleep 5
+TIMEOUT=${1:-60}
+PORT=${2:-9000}
+COUNTER=0
+
+echo "Waiting for Medusa server on port $PORT to respond..."
+
+until curl -f http://localhost:$PORT/health >/dev/null 2>&1; do
+  COUNTER=$((COUNTER + 1))
+
+  if [ $COUNTER -ge $TIMEOUT ]; then
+    echo "Timeout waiting for server on port $PORT"
+    exit 1
   fi
+
+  echo "Waiting... ($COUNTER/$TIMEOUT)"
+  sleep 1
 done
 
-echo $status_code
-
-if [[ "$status_code" =  000 ]] ; then
-  echo "Site status changed to $status_code"
-  exit 1
-else
-  exit 0
-fi
+echo "Server is ready!"
